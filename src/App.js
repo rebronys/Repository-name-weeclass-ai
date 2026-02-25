@@ -1,550 +1,737 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-const SCHOOL_NAME = "은평초등학교";
-const COUNSELOR_NAME = "김윤정";
-const ADMIN_PW = "weeclass2024";
-const GRADES = ["1학년", "2학년", "3학년", "4학년", "5학년", "6학년"];
+// =============================================
+// 상수 정의
+// =============================================
+const SCHOOL_NAME = '은평초등학교';
+const COUNSELOR_NAME = '마음따숩 김윤정 위클래스쌤';
+const ADMIN_PW = 'weeclass2024';
+const GRADES = ['1학년', '2학년', '3학년', '4학년', '5학년', '6학년'];
 
 const CATEGORIES = [
-  { id: "friend",   label: "👫 친구 갈등",    keywords: ["친구", "사이", "싸웠", "화해", "무시"] },
-  { id: "bully",    label: "😢 괴롭힘/왕따",  keywords: ["괴롭힘", "왕따", "따돌림", "때려", "욕"] },
-  { id: "study",    label: "📚 공부 스트레스", keywords: ["공부", "시험", "성적", "숙제", "학원"] },
-  { id: "teacher",  label: "👩‍🏫 선생님 문제",  keywords: ["선생님", "담임", "혼났"] },
-  { id: "family",   label: "🏠 가족 문제",    keywords: ["엄마", "아빠", "부모", "가족", "형제", "동생"] },
-  { id: "lonely",   label: "😔 외로움/우울",  keywords: ["외로워", "우울", "슬퍼", "혼자"] },
-  { id: "angry",    label: "😤 화/분노",      keywords: ["화나", "짜증", "억울", "열받"] },
-  { id: "anxiety",  label: "😰 불안/걱정",    keywords: ["불안", "걱정", "무서워", "두려워", "긴장"] },
-  { id: "body",     label: "🤒 몸/건강",      keywords: ["아파", "두통", "배아파", "피곤"] },
-  { id: "sns",      label: "📱 SNS/사이버",   keywords: ["SNS", "인스타", "카톡", "단톡"] },
-  { id: "game",     label: "🎮 게임 중독",    keywords: ["게임", "유튜브", "핸드폰", "중독"] },
-  { id: "love",     label: "💕 이성 친구",    keywords: ["좋아해", "짝사랑", "사귀", "고백"] },
-  { id: "career",   label: "🌟 꿈/진로",      keywords: ["꿈", "장래희망", "진로"] },
-  { id: "selfcare", label: "💪 자존감",       keywords: ["자신없어", "못하겠어", "열등감"] },
-  { id: "violence", label: "🆘 폭력/학대",    keywords: ["맞아", "때려", "폭력", "학대"] },
-  { id: "divorce",  label: "💔 부모 이혼",    keywords: ["이혼", "별거", "부모싸움"] },
-  { id: "move",     label: "🏫 전학/적응",    keywords: ["전학", "새학교", "적응"] },
-  { id: "burden",   label: "📝 학업 부담",    keywords: ["숙제많아", "공부너무많아", "학원많아"] },
-  { id: "sleep",    label: "😴 수면/피로",    keywords: ["못자", "피곤해", "졸려", "잠"] },
-  { id: "etc",      label: "💬 기타 고민",    keywords: [] },
+  { id: 'friend',    label: '친구 관계',   emoji: '👫', keywords: ['친구','사이','싸움','무시','왕따','따돌림','욕','험담','배신','화해'] },
+  { id: 'study',     label: '공부 걱정',   emoji: '📚', keywords: ['공부','성적','시험','숙제','학원','수업','모르겠','어려워','집중'] },
+  { id: 'family',    label: '가족 이야기', emoji: '🏠', keywords: ['엄마','아빠','부모','형','언니','오빠','동생','집','가족','혼나'] },
+  { id: 'emotion',   label: '감정 표현',   emoji: '💭', keywords: ['화나','슬프','외로워','무서워','불안','걱정','짜증','속상','기분'] },
+  { id: 'bully',     label: '학교폭력',    emoji: '🛡️', keywords: ['때려','맞아','괴롭','폭력','협박','빼앗','강요','신체'] },
+  { id: 'teacher',   label: '선생님 고민', emoji: '🏫', keywords: ['선생님','담임','야단','혼났','억울','불공평','차별'] },
+  { id: 'health',    label: '몸 건강',     emoji: '💊', keywords: ['아파','두통','배탈','못자','잠','피곤','밥','식욕'] },
+  { id: 'lonely',    label: '외로움',      emoji: '🌙', keywords: ['혼자','외로','친구없','소외','낀다','껴줘'] },
+  { id: 'future',    label: '꿈과 진로',   emoji: '🌟', keywords: ['꿈','장래','직업','미래','하고싶','되고싶'] },
+  { id: 'sns',       label: 'SNS 고민',    emoji: '📱', keywords: ['카톡','인스타','유튜브','게임','댓글','사진','올렸'] },
+  { id: 'love',      label: '이성 친구',   emoji: '💕', keywords: ['좋아해','고백','짝사랑','사귀','헤어','남친','여친'] },
+  { id: 'secret',    label: '비밀 이야기', emoji: '🔒', keywords: ['비밀','말못해','아무도','혼자만','털어놓'] },
+  { id: 'angry',     label: '화 조절',     emoji: '😤', keywords: ['화','폭발','참을수','때리고싶','소리지르','분노'] },
+  { id: 'sad',       label: '우울한 기분', emoji: '😢', keywords: ['우울','슬프','울고','눈물','힘들어','무기력','아무것도'] },
+  { id: 'anxiety',   label: '불안·걱정',   emoji: '😰', keywords: ['불안','떨려','무서워','걱정','긴장','두근'] },
+  { id: 'game',      label: '게임·중독',   emoji: '🎮', keywords: ['게임','핸드폰','유튜브','중독','못끊','벌받'] },
+  { id: 'sibling',   label: '형제·자매',   emoji: '👧👦', keywords: ['형제','자매','동생','형','언니','오빠','비교','편애'] },
+  { id: 'praise',    label: '칭찬받고싶어',emoji: '🌸', keywords: ['칭찬','인정','잘했','못해','자신없','자신감'] },
+  { id: 'teacher2',  label: '학교생활',    emoji: '🎒', keywords: ['학교','교실','급식','청소','당번','발표','부끄'] },
+  { id: 'etc',       label: '기타 고민',   emoji: '💬', keywords: [] }
 ];
 
-const HIGH_RISK = ["죽고싶", "자해", "유서", "자살", "죽고 싶", "죽어버리고"];
-const MEDIUM_RISK = ["우울", "불안", "괴롭힘", "왕따", "힘들어", "외로워", "무서워", "못살겠", "슬퍼", "울고싶"];
+const HIGH_RISK = [
+  '죽고싶','죽을래','죽어버','자살','자해','손목','칼로','뛰어내','목매','안살','살기싫','없어지고싶'
+];
+const MEDIUM_RISK = [
+  '때려','맞았','폭력','협박','학대','무서워','도망','신고','경찰','빼앗','강요'
+];
 
-const getRisk = (txt) => {
-  let s = 0;
-  HIGH_RISK.forEach(w => txt.includes(w) && (s += 3));
-  MEDIUM_RISK.forEach(w => txt.includes(w) && (s += 1));
-  return s;
-};
+// =============================================
+// 유틸 함수
+// =============================================
+function getRisk(text) {
+  const t = text.toLowerCase();
+  if (HIGH_RISK.some(k => t.includes(k))) return 'high';
+  if (MEDIUM_RISK.some(k => t.includes(k))) return 'medium';
+  return 'low';
+}
 
-const getCategory = (txt) => {
-  for (const c of CATEGORIES) {
-    if (c.keywords.some(k => txt.includes(k))) return c.id;
+function getCategory(text) {
+  const t = text.toLowerCase();
+  for (const cat of CATEGORIES) {
+    if (cat.keywords.some(k => t.includes(k))) return cat.id;
   }
-  return "etc";
-};
+  return 'etc';
+}
 
-const getCategoryLabel = (id) => CATEGORIES.find(c => c.id === id)?.label || id;
+function getCategoryLabel(id) {
+  return CATEGORIES.find(c => c.id === id)?.label || '기타';
+}
 
-const getRiskBadge = (sc) =>
-  sc >= 3
-    ? { label: "🔴 고위험", color: "#dc2626", bg: "#fef2f2" }
-    : sc >= 1
-    ? { label: "🟡 주의", color: "#d97706", bg: "#fffbeb" }
-    : { label: "🟢 일반", color: "#16a34a", bg: "#f0fdf4" };
+function getRiskBadge(risk) {
+  if (risk === 'high')   return { text: '🔴 고위험', color: '#ef4444' };
+  if (risk === 'medium') return { text: '🟡 주의',   color: '#f59e0b' };
+  return                        { text: '🟢 일반',   color: '#10b981' };
+}
 
-const parseName = (txt) => {
-  const cleaned = txt
-    .replace(/저는|제|이름은|이에요|예요|입니다|이라고|라고|해요|야|이야|은|는|이|가/g, "")
-    .replace(/[^가-힣a-zA-Z]/g, "")
-    .trim();
-  return cleaned.length >= 1 ? cleaned.substring(0, 6) : txt.trim().substring(0, 6);
-};
+function parseName(text) {
+  const cleaned = text.replace(/[^가-힣a-zA-Z]/g, '');
+  return cleaned.length >= 1 && cleaned.length <= 6 ? cleaned : null;
+}
 
-const buildSystemPrompt = (name, gender, grade, turn) => {
-  const genderText = gender === "여학생" ? "여학생" : gender === "남학생" ? "남학생" : "학생";
-  const turnGuide =
-    turn <= 3
-      ? `라포 형성 단계야. ${name}이가 편안함을 느끼도록 공감을 충분히 해줘. 절대 해결책을 제시하지 말고 감정을 먼저 받아줘.`
-      : turn <= 6
-      ? `감정 탐색 단계야. ${name}이의 상황을 더 깊이 이해하려고 노력해. 구체적으로 어떤 상황인지, 언제부터 그랬는지, 주변에 누가 있는지 자연스럽게 물어봐.`
-      : turn <= 9
-      ? `해결 모색 단계야. ${name}이 스스로 생각할 수 있도록 "어떻게 하면 좋을 것 같아?" 처럼 질문으로 이끌어줘. 선생님 생각을 강요하지 말고 학생이 답을 찾도록 도와줘.`
-      : `마무리 단계야. ${name}이가 충분히 이야기했으니 이제 선생님과 직접 만나면 더 잘 도울 수 있다고 자연스럽게 연결해줘. 강요하지 말고 부드럽게 제안해.`;
+// =============================================
+// 시스템 프롬프트 — 상담 핵심 로직
+// =============================================
+function buildSystemPrompt(name, gender, grade, turn) {
+  const genderText = gender === 'female' ? '여학생'
+                   : gender === 'male'   ? '남학생'
+                   : '학생';
 
-  return `당신은 ${SCHOOL_NAME} 위클래스 전문상담교사 ${COUNSELOR_NAME} 선생님입니다.
+  const role = `
+너는 ${SCHOOL_NAME} 위클래스 상담교사 "${COUNSELOR_NAME}"이야.
+지금 ${grade} ${genderText} "${name}"와 1:1 채팅 상담 중이야.
+이 아이는 용기를 내서 먼저 말을 걸어온 거야. 
+절대로 AI라고 밝히지 마. 실제 선생님처럼 자연스럽게 대화해.
+`;
 
-## 상담 대상 정보
-- 이름: ${name || "학생"}
-- 학년: ${grade}
-- 성별: ${genderText}
-- 현재 대화 횟수: ${turn}번째
+  const readingRules = `
+[상대 말 읽기 — 가장 중요한 규칙]
+1. ${name}이(가) 쓴 단어를 그대로 반영해서 공감해라
+   예) 학생: "짜증나요" → "짜증이 많이 났구나, 어떤 일이 있었어?"
+   절대 금지: 학생이 쓰지 않은 감정 단어를 먼저 단정짓는 것
+2. 학생이 말하지 않은 감정을 추측해서 단정하지 마라. 반드시 질문으로 확인해라
+3. 이전 대화에서 나온 이름, 장소, 사건, 키워드를 기억하고 자연스럽게 연결해라
+   예) 앞에서 "민지"가 나왔다면 → "아까 말한 민지랑 또 있었어?"
+4. 한 번에 질문은 반드시 하나만 해라. 두 개 이상 절대 금지
+5. 해결책, 조언, 훈계는 학생이 먼저 요청하기 전까지 절대 하지 마라
+`;
 
-## 가장 중요한 규칙 (반드시 지켜!)
-1. 반드시 이전 대화 내용을 기억하고 연결해서 답해줘
-2. 학생이 한 말을 그대로 반영해서 공감해줘
-3. 절대 같은 말을 반복하지 마. 매번 새로운 반응을 보여줘
-4. 위기 상황이 아닌 일반 고민은 충분히 대화를 이어가줘
-5. 한 번에 질문은 딱 1개만 해줘
+  const stageGuide = turn <= 3
+    ? `[현재 단계: 라포 형성 — ${turn}번째 대화]
+목표: 편안함과 신뢰 만들기. 이름을 불러주고 짧게 공감하고 판단 없이 받아줘라.
+지금 해야 할 것: 따뜻하게 맞이하고, "어떤 일이 있었어?" 처럼 부드럽게 문을 열어줘라.
+절대 금지: 해결책 제시, 조언, 훈계, 길게 설명하기`
 
-## 말투 규칙
-- 초등학생 눈높이에 맞는 쉬운 말 사용
-- 반드시 "${name || "친구"}아" 로 시작해서 이름을 불러줘
-- 엄마처럼 따뜻하고 포근한 말투
-- 2~3문장으로 짧고 명확하게
-- 이모지 1~2개 자연스럽게 사용
+    : turn <= 7
+    ? `[현재 단계: 감정 탐색 — ${turn}번째 대화]
+목표: 감정의 이름 함께 찾기.
+지금 해야 할 것: "언제부터?", "어떤 느낌이었어?", "가장 힘든 게 뭐야?" 처럼
+감정을 깊이 탐색하는 질문 하나만 해라.
+절대 금지: 해결책 제시, 비교, 판단`
 
-## 현재 상담 단계
-${turnGuide}
+    : turn <= 11
+    ? `[현재 단계: 핵심 파악 — ${turn}번째 대화]
+목표: 반복되는 패턴과 핵심 원인 발견.
+지금 해야 할 것: "이런 일이 자주 있어?", "예전에도 비슷한 적 있었어?",
+"그때 가장 힘들었던 게 뭐야?" 처럼 패턴을 확인해라.
+아직 해결책 제시 금지`
 
-## 좋은 대화 예시
-학생: "친구가 나를 때려요"
-좋은 답변: "${name || "친구"}아, 친구한테 맞았구나 😢 많이 아팠겠다. 그 친구가 왜 그랬는지 혹시 알아?"
+    : `[현재 단계: 해결 모색 — ${turn}번째 대화]
+목표: 학생 스스로 답을 찾도록 이끌기.
+지금 해야 할 것: "어떻게 됐으면 좋겠어?", "선생님이 어떻게 도와줄까?",
+"그 상황에서 네가 할 수 있는 게 뭐가 있을까?" 처럼
+학생이 스스로 생각하고 답을 말하도록 유도해라.
+절대 금지: "이렇게 해봐" 같은 지시형 해결책`;
 
-학생: "모르겠어요"
-좋은 답변: "${name || "친구"}아, 갑자기 그런 일이 생겨서 너도 많이 당황했겠다 💙 그 일이 언제 있었어?"
+  const toneRules = `
+[말투·형식 규칙]
+- 2~3문장 이내로 짧고 따뜻하게
+- 이모지는 1~2개, 과하면 안 됨
+- "~구나", "~겠다", "그랬어?", "맞아?" 같은 공감형 어미 사용
+- 초등학생 눈높이에 맞는 쉬운 단어 사용
+- 이름(${name})을 자주 불러줘서 개인적인 느낌을 줘라
+- 절대 금지 표현:
+  "네, 알겠습니다" / "도움이 필요하시면" / "물론이죠" / "안타깝게도"
+  "저는 AI입니다" / "~해드릴게요" / "참고하세요"
+`;
 
-## 절대 하면 안 되는 것
-- 같은 문장 반복 금지
-- 위기 안내 메시지 반복 금지
-- 진단이나 의학적 판단 금지
-- 부모님이나 선생님 비판 금지
-- AI처럼 딱딱한 말투 금지
-- 한 번에 여러 질문 금지
+  const crisisRule = `
+[위기 상황 감지 시 — 즉시 적용]
+자해, 죽고싶다, 맞는다, 학대 관련 키워드 감지 시:
+1. 먼저 따뜻하게 받아주고 혼자가 아니라는 것을 알려줘라
+2. "선생님(어른)에게 직접 도움을 요청하자"고 안내해라
+3. 위기상담전화 1388 안내해라
+4. 대화를 절대 끊지 말고 계속 연결을 유지해라
+5. "선생님이 꼭 도와줄게"로 마무리해라
+`;
 
-## 위기 상황 시에만 (자해, 자살 직접 언급 시)
-"${name || "친구"}아, 선생님이 많이 걱정돼 💙 지금 바로 청소년 전화 1388이나 자살예방 1393에 전화해줘. 선생님도 꼭 알려줘."`;
-};
+  return `${role}\n${readingRules}\n${stageGuide}\n${toneRules}\n${crisisRule}`;
+}
 
-const getCrisisReply = (name) => {
-  const n = name || "친구";
-  return `${n}아, 선생님이 지금 정말 많이 걱정돼 💙\n\n네가 힘든 마음을 말해줘서 고마워. 혼자 이런 생각을 품고 있었구나.\n\n지금 바로 연락해줘:\n📞 청소년 전화 1388 (24시간, 무료)\n📞 자살예방상담 1393 (24시간, 무료)\n📞 긴급신고 112\n\n선생님도 꼭 알려줘야 해. 네 곁에 항상 있을게 💙`;
-};
+// =============================================
+// 위기 응답
+// =============================================
+function getCrisisReply(name, risk) {
+  if (risk === 'high') {
+    return `${name}아, 말해줘서 정말 고마워. 지금 많이 힘들구나 💙\n선생님이 네 곁에 있을게. 혼자 감당하지 않아도 돼.\n지금 바로 위기상담전화 ☎️ 1388 에 전화하거나,\n가까운 어른한테 꼭 도움을 요청해줘. 선생님이 응원할게 🌸`;
+  }
+  return `${name}아, 무서운 일이 있었구나 😢\n네 잘못이 절대 아니야. 선생님한테 더 자세히 말해줄 수 있어?\n어떤 일이 있었는지 하나씩 얘기해줘 💙`;
+}
 
-async function callAI(userText, name, gender, grade, turn, hist) {
+// =============================================
+// AI 호출
+// =============================================
+async function callAI(userText, name, gender, grade, turn, history) {
   try {
     const systemPrompt = buildSystemPrompt(name, gender, grade, turn);
+
     const messages = [
-      { role: "system", content: systemPrompt },
-      ...hist,
-      { role: "user", content: userText },
+      { role: 'system', content: systemPrompt },
+      ...history,
+      { role: 'user', content: userText }
     ];
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages }),
+
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages })
     });
+
     if (!response.ok) return null;
+
     const data = await response.json();
     return data?.choices?.[0]?.message?.content || null;
-  } catch (error) {
-    console.error("callAI 오류:", error.message);
+  } catch (e) {
+    console.error('AI 호출 오류:', e);
     return null;
   }
 }
 
-const getFallback = (name, turn) => {
-  const n = name || "친구";
-  const responses = [
-    `${n}아, 이야기해줘서 고마워 😊 어떤 일이 있었는지 조금 더 말해줄 수 있어?`,
-    `${n}아, 그랬구나 💙 많이 힘들었겠다. 어떤 부분이 제일 힘들어?`,
-    `${n}아, 선생님이 네 마음을 이해해 😊 같이 생각해볼까?`,
-    `${n}아, 정말 고생했어 💙 선생님이랑 직접 이야기하면 더 잘 도울 수 있어. 상담 신청해볼래?`,
+// =============================================
+// Fallback 답변
+// =============================================
+function getFallback(name, turn) {
+  const fallbacks = [
+    `${name}아, 말해줘서 고마워 😊 어떤 일이 있었는지 더 얘기해줄 수 있어?`,
+    `그랬구나, ${name}아. 그때 어떤 기분이었어?`,
+    `${name}이 많이 힘들었겠다. 조금 더 자세히 말해줄 수 있어? 💙`,
+    `선생님이 잘 듣고 있어, ${name}아. 계속 얘기해줘 🌸`,
+    `${name}아, 그 상황에서 가장 힘들었던 게 뭐야?`,
   ];
-  const idx = Math.min(Math.floor((turn - 1) / 3), responses.length - 1);
-  return responses[idx];
-};
+  return fallbacks[turn % fallbacks.length];
+}
 
-function AdminModal({ onSuccess, onClose }) {
-  const [pw, setPw] = useState("");
-  const [err, setErr] = useState("");
+// =============================================
+// 관리자 모달
+// =============================================
+function AdminModal({ onClose, onSuccess }) {
+  const [pw, setPw] = useState('');
+  const [err, setErr] = useState(false);
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-      <div style={{ background: "#fff", borderRadius: 16, padding: 32, width: 320, boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
-        <h3 style={{ margin: "0 0 8px", fontSize: 18, color: "#374151" }}>🔒 관리자 로그인</h3>
-        <p style={{ margin: "0 0 16px", fontSize: 13, color: "#6b7280" }}>비밀번호를 입력해주세요</p>
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
+    }}>
+      <div style={{
+        background: '#fff', borderRadius: 16, padding: 32,
+        width: 320, boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+      }}>
+        <h3 style={{ marginBottom: 16, color: '#ec4899', textAlign: 'center' }}>🔐 관리자 로그인</h3>
         <input
-          type="password" value={pw}
-          onChange={e => setPw(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") { if (pw === ADMIN_PW) onSuccess(); else setErr("비밀번호가 틀렸습니다"); } }}
+          type="password"
           placeholder="비밀번호 입력"
-          style={{ width: "100%", padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14, boxSizing: "border-box", marginBottom: 8 }}
-          autoFocus
+          value={pw}
+          onChange={e => { setPw(e.target.value); setErr(false); }}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              if (pw === ADMIN_PW) onSuccess();
+              else setErr(true);
+            }
+          }}
+          style={{
+            width: '100%', padding: '10px 14px', border: `2px solid ${err ? '#ef4444' : '#fce7f3'}`,
+            borderRadius: 10, fontSize: 16, outline: 'none', boxSizing: 'border-box'
+          }}
         />
-        {err && <p style={{ color: "#dc2626", fontSize: 12, margin: "0 0 8px" }}>{err}</p>}
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={() => { if (pw === ADMIN_PW) onSuccess(); else setErr("비밀번호가 틀렸습니다"); }}
-            style={{ flex: 1, padding: "10px", background: "#f472b6", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>확인</button>
-          <button onClick={onClose}
-            style={{ flex: 1, padding: "10px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: 8, cursor: "pointer" }}>취소</button>
+        {err && <p style={{ color: '#ef4444', fontSize: 13, marginTop: 6 }}>비밀번호가 틀렸어요</p>}
+        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          <button onClick={onClose} style={{
+            flex: 1, padding: 10, border: '1px solid #ddd',
+            borderRadius: 10, background: '#f9f9f9', cursor: 'pointer'
+          }}>취소</button>
+          <button onClick={() => { if (pw === ADMIN_PW) onSuccess(); else setErr(true); }} style={{
+            flex: 1, padding: 10, border: 'none',
+            borderRadius: 10, background: '#ec4899', color: '#fff',
+            cursor: 'pointer', fontWeight: 'bold'
+          }}>확인</button>
         </div>
       </div>
     </div>
   );
 }
 
-function AdminDashboard({ logs, onBack }) {
+// =============================================
+// 관리자 대시보드
+// =============================================
+function AdminDashboard({ logs, onClose }) {
   const total = logs.length;
-  const highRisk = logs.filter(l => l.risk >= 3).length;
-  const midRisk = logs.filter(l => l.risk >= 1 && l.risk < 3).length;
-  const gradeCounts = {};
-  GRADES.forEach(g => { gradeCounts[g] = logs.filter(l => l.grade === g).length; });
-  const catCounts = {};
-  CATEGORIES.forEach(c => { catCounts[c.id] = logs.filter(l => l.category === c.id).length; });
+  const highRisk = logs.filter(l => l.risk === 'high').length;
+  const medRisk  = logs.filter(l => l.risk === 'medium').length;
 
-  const exportCSV = () => {
-    const header = "시간,학년,성별,카테고리,위험도,질문,답변\n";
-    const rows = logs.map(l =>
-      `"${l.time}","${l.grade}","${l.gender || ""}","${getCategoryLabel(l.category)}","${l.risk}","${l.question.replace(/"/g, "'")}","${l.answer.replace(/"/g, "'")}"`
-    ).join("\n");
-    const blob = new Blob(["\uFEFF" + header + rows], { type: "text/csv;charset=utf-8" });
+  const categoryCounts = {};
+  CATEGORIES.forEach(c => { categoryCounts[c.id] = 0; });
+  logs.forEach(l => { if (categoryCounts[l.category] !== undefined) categoryCounts[l.category]++; });
+
+  const topCategories = CATEGORIES
+    .map(c => ({ ...c, count: categoryCounts[c.id] }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  function exportCSV() {
+    const header = 'ID,이름,학년,성별,카테고리,위험도,시간,메시지\n';
+    const rows = logs.map((l, i) =>
+      `${i + 1},${l.name},${l.grade},${l.gender},${getCategoryLabel(l.category)},${l.risk},${l.time},"${l.message.replace(/"/g, '""')}"`
+    ).join('\n');
+    const blob = new Blob(['\uFEFF' + header + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "weeclass_logs.csv"; a.click();
-  };
-
-  return (
-    <div style={{ padding: 16, maxWidth: 480, margin: "0 auto" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-        <button onClick={onBack} style={{ padding: "8px 16px", background: "#f3f4f6", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 14 }}>← 뒤로</button>
-        <h2 style={{ margin: 0, fontSize: 18, color: "#374151" }}>📊 관리자 대시보드</h2>
-        <button onClick={exportCSV} style={{ marginLeft: "auto", padding: "8px 14px", background: "#10b981", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>CSV 내보내기</button>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
-        {[
-          { label: "전체 상담", value: total, color: "#3b82f6", bg: "#eff6ff" },
-          { label: "고위험", value: highRisk, color: "#dc2626", bg: "#fef2f2" },
-          { label: "주의", value: midRisk, color: "#d97706", bg: "#fffbeb" },
-        ].map((item, i) => (
-          <div key={i} style={{ background: item.bg, borderRadius: 12, padding: "12px 8px", textAlign: "center" }}>
-            <div style={{ fontSize: 24, fontWeight: 700, color: item.color }}>{item.value}</div>
-            <div style={{ fontSize: 11, color: "#6b7280" }}>{item.label}</div>
-          </div>
-        ))}
-      </div>
-      <div style={{ background: "#fff", borderRadius: 12, padding: 16, marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-        <h3 style={{ margin: "0 0 12px", fontSize: 14, color: "#374151" }}>학년별 상담 현황</h3>
-        {GRADES.map(g => (
-          <div key={g} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-            <span style={{ fontSize: 12, width: 40, color: "#6b7280" }}>{g}</span>
-            <div style={{ flex: 1, background: "#f3f4f6", borderRadius: 4, height: 16, overflow: "hidden" }}>
-              <div style={{ width: total ? `${(gradeCounts[g] / total) * 100}%` : "0%", background: "#f472b6", height: "100%", borderRadius: 4 }} />
-            </div>
-            <span style={{ fontSize: 12, color: "#374151", width: 20 }}>{gradeCounts[g]}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ background: "#fff", borderRadius: 12, padding: 16, marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-        <h3 style={{ margin: "0 0 12px", fontSize: 14, color: "#374151" }}>카테고리별 현황</h3>
-        {CATEGORIES.filter(c => (catCounts[c.id] || 0) > 0).map(c => (
-          <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-            <span style={{ fontSize: 11, width: 90, color: "#6b7280" }}>{c.label}</span>
-            <div style={{ flex: 1, background: "#f3f4f6", borderRadius: 4, height: 14, overflow: "hidden" }}>
-              <div style={{ width: `${((catCounts[c.id] || 0) / total) * 100}%`, background: "#a78bfa", height: "100%", borderRadius: 4 }} />
-            </div>
-            <span style={{ fontSize: 12, color: "#374151", width: 16 }}>{catCounts[c.id] || 0}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ background: "#fff", borderRadius: 12, padding: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-        <h3 style={{ margin: "0 0 12px", fontSize: 14, color: "#374151" }}>최근 상담 로그</h3>
-        {logs.length === 0 && <p style={{ color: "#9ca3af", fontSize: 13 }}>아직 상담 기록이 없습니다</p>}
-        {[...logs].reverse().slice(0, 10).map((log, i) => {
-          const badge = getRiskBadge(log.risk);
-          return (
-            <div key={i} style={{ padding: "10px 12px", borderRadius: 8, background: badge.bg, marginBottom: 8, border: `1px solid ${badge.color}22` }}>
-              <div style={{ display: "flex", gap: 6, marginBottom: 4, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 11, color: "#6b7280" }}>{log.time}</span>
-                <span style={{ fontSize: 11, background: "#e5e7eb", borderRadius: 4, padding: "1px 6px" }}>{log.grade}</span>
-                {log.gender && <span style={{ fontSize: 11, background: "#fce7f3", borderRadius: 4, padding: "1px 6px" }}>{log.gender}</span>}
-                <span style={{ fontSize: 11, color: badge.color, fontWeight: 600 }}>{badge.label}</span>
-              </div>
-              <p style={{ margin: "0 0 2px", fontSize: 13, color: "#374151" }}>Q: {log.question.substring(0, 40)}...</p>
-              <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>A: {log.answer.substring(0, 50)}...</p>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function GenderSelect({ name, onSelect }) {
-  return (
-    <div style={{ padding: "16px 0" }}>
-      <p style={{ margin: "0 0 12px", fontSize: 14, color: "#374151", textAlign: "center" }}>
-        {name}아, 선생님이 더 잘 이해할 수 있게<br />어떤 친구인지 알려줄 수 있어? 😊
-      </p>
-      <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-        {[
-          { label: "👧 여학생", value: "여학생", bg: "#fce7f3", border: "#f9a8d4" },
-          { label: "👦 남학생", value: "남학생", bg: "#dbeafe", border: "#93c5fd" },
-          { label: "🌟 비밀", value: "비밀", bg: "#f3f4f6", border: "#d1d5db" },
-        ].map(btn => (
-          <button key={btn.value} onClick={() => onSelect(btn.value)}
-            style={{ padding: "12px 18px", background: btn.bg, border: `2px solid ${btn.border}`, borderRadius: 12, cursor: "pointer", fontSize: 14, fontWeight: 600 }}>
-            {btn.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-const PinkBackground = () => (
-  <svg viewBox="0 0 480 850" xmlns="http://www.w3.org/2000/svg"
-    style={{ position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, height: "100%", zIndex: 0, opacity: 0.15 }}>
-    <rect width="480" height="850" fill="#fce7f3" />
-    {[[60,80],[150,40],[280,100],[400,60],[100,200],[350,180],[200,300],[440,250],[30,350],[320,400],[140,450],[410,500],[80,580],[260,550],[380,620]].map(([x,y],i) => (
-      <g key={i} transform={`translate(${x},${y})`}>
-        {[0,72,144,216,288].map((angle,j) => (
-          <ellipse key={j} cx={Math.cos((angle*Math.PI)/180)*8} cy={Math.sin((angle*Math.PI)/180)*8}
-            rx="6" ry="4" fill={i%3===0?"#f9a8d4":i%3===1?"#fda4af":"#fbcfe8"}
-            transform={`rotate(${angle})`} opacity="0.7" />
-        ))}
-        <circle cx="0" cy="0" r="2.5" fill="#fbbf24" />
-      </g>
-    ))}
-  </svg>
-);
-
-const SchoolLogo = ({ size = 40 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="20" cy="20" r="19" fill="#fce7f3" stroke="#f9a8d4" strokeWidth="2" />
-    <polygon points="20,6 32,14 32,30 8,30 8,14" fill="#f472b6" opacity="0.8" />
-    <rect x="16" y="22" width="8" height="8" fill="#fff" opacity="0.9" />
-    <rect x="10" y="16" width="5" height="5" fill="#fff" opacity="0.7" />
-    <rect x="25" y="16" width="5" height="5" fill="#fff" opacity="0.7" />
-    <text x="20" y="12" textAnchor="middle" fontSize="5" fill="#fff" fontWeight="bold">은평</text>
-  </svg>
-);
-
-export default function WeClassAI() {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [grade, setGrade] = useState("3학년");
-  const [logs, setLogs] = useState([]);
-  const [view, setView] = useState("chat");
-  const [showAdminModal, setShowAdminModal] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState("idle");
-  const [studentName, setStudentName] = useState("");
-  const [studentGender, setStudentGender] = useState("");
-  const [turnCount, setTurnCount] = useState(0);
-  const [history, setHistory] = useState([]);
-  const chatEndRef = useRef(null);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
-
-  const addMsg = useCallback((user, bot, isAlert = false) => {
-    setMessages(prev => [...prev, { user, bot, isAlert }]);
-  }, []);
-
-  const updateLastBot = useCallback((bot, isAlert = false) => {
-    setMessages(prev => {
-      const updated = [...prev];
-      if (updated.length > 0) {
-        updated[updated.length - 1] = { ...updated[updated.length - 1], bot, isAlert };
-      }
-      return updated;
-    });
-  }, []);
-
-  const handleCategoryClick = useCallback((categoryLabel) => {
-    if (loading || step !== "idle") return;
-    setMessages([]);
-    setStep("asked_name");
-    setTurnCount(0);
-    setHistory([]);
-    setStudentName("");
-    setStudentGender("");
-    const greeting = `안녕! 😊 나는 ${SCHOOL_NAME} 위클래스 상담선생님 ${COUNSELOR_NAME}이야.\n\n${categoryLabel} 에 대해 이야기하고 싶구나. 선생님이 잘 들을게 💙\n\n먼저 네 이름을 알려줄 수 있어? 실명이 불편하면 별명이나 닉네임도 괜찮아!`;
-    addMsg(categoryLabel, greeting);
-  }, [loading, step, addMsg]);
-
-  const handleGender = useCallback((gender) => {
-    setStudentGender(gender);
-    setStep("counseling");
-    const emoji = gender === "여학생" ? "👧" : gender === "남학생" ? "👦" : "🌟";
-    const reply = `${emoji} 알겠어! 이제 진짜 이야기를 해볼까?\n\n${studentName}아, 어떤 일이 있었는지 선생님한테 편하게 말해줘. 여기서 하는 이야기는 선생님만 알고 있을게 💙`;
-    addMsg(`${gender} 선택`, reply);
-  }, [studentName, addMsg]);
-
-  // eslint-disable-next-line
-  const sendMessage = useCallback(async () => {
-    const txt = input.trim();
-    if (!txt || loading) return;
-    setInput("");
-    setLoading(true);
-    setMessages(prev => [...prev, { user: txt, bot: null }]);
-    await new Promise(r => setTimeout(r, 800));
-
-    try {
-      if (step === "asked_name") {
-        const name = parseName(txt);
-        setStudentName(name);
-        setStep("asked_gender");
-        const reply = `${name}아, 반가워! 😊 선생님이 ${name}이 이야기를 잘 들을게.`;
-        setMessages(prev => prev.map((m, i) =>
-          i === prev.length - 1 ? { ...m, bot: reply, genderSelect: true, genderName: name } : m
-        ));
-      } else if (step === "counseling") {
-        const riskScore = getRisk(txt);
-        const cat = getCategory(txt);
-        const newTurn = turnCount + 1;
-        setTurnCount(newTurn);
-        let reply;
-        let isAlert = false;
-        if (riskScore >= 3) {
-          reply = getCrisisReply(studentName);
-          isAlert = true;
-        } else {
-          const newHist = [...history, { role: "user", content: txt }];
-          const aiReply = await callAI(txt, studentName, studentGender, grade, newTurn, history);
-          reply = aiReply || getFallback(studentName, newTurn);
-          if (aiReply) {
-            setHistory([...newHist, { role: "assistant", content: aiReply }]);
-          }
-        }
-        updateLastBot(reply, isAlert);
-        setLogs(prev => [...prev, {
-          grade, gender: studentGender, category: cat,
-          risk: riskScore, question: txt, answer: reply,
-          studentName, time: new Date().toLocaleString("ko-KR"),
-        }]);
-      } else {
-        updateLastBot("안녕! 위에서 상담 주제를 먼저 선택해줘 😊");
-      }
-    } catch (err) {
-      console.error("sendMessage 오류:", err);
-      updateLastBot(getFallback(studentName, turnCount));
-    } finally {
-      setLoading(false);
-    }
-  }, [input, loading, step, studentName, studentGender, grade, turnCount, history, updateLastBot]);
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  if (view === "admin") {
-    return (
-      <div style={{ minHeight: "100vh", background: "#fdf2f8" }}>
-        <PinkBackground />
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <AdminDashboard logs={logs} onBack={() => setView("chat")} />
-        </div>
-      </div>
-    );
+    const a = document.createElement('a'); a.href = url;
+    a.download = `weeclass_logs_${new Date().toLocaleDateString('ko-KR').replace(/\. /g,'-').replace('.','')}.csv`;
+    a.click();
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fdf2f8", display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <PinkBackground />
-      {showAdminModal && (
-        <AdminModal
-          onSuccess={() => { setShowAdminModal(false); setView("admin"); }}
-          onClose={() => setShowAdminModal(false)}
-        />
-      )}
-      <div style={{ width: "100%", maxWidth: 480, minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative", zIndex: 1 }}>
-        <div style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(8px)", borderBottom: "1px solid #fce7f3", padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, position: "sticky", top: 0, zIndex: 10 }}>
-          <SchoolLogo size={38} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#be185d" }}>{SCHOOL_NAME}</div>
-            <div style={{ fontSize: 11, color: "#9ca3af" }}>위클래스 AI 상담 · {COUNSELOR_NAME} 선생님</div>
-          </div>
-          <select value={grade} onChange={e => setGrade(e.target.value)}
-            style={{ padding: "6px 10px", border: "1px solid #fce7f3", borderRadius: 8, fontSize: 13, background: "#fff", color: "#374151", cursor: "pointer" }}>
-            {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
-          </select>
-          <button onClick={() => setShowAdminModal(true)}
-            style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid #fce7f3", background: "#fff", cursor: "pointer", fontSize: 16 }}>🔒</button>
+    <div style={{ minHeight: '100vh', background: '#fff0f6', padding: 20 }}>
+      <div style={{ maxWidth: 700, margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h2 style={{ color: '#ec4899', margin: 0 }}>📊 위클래스 상담 현황</h2>
+          <button onClick={onClose} style={{
+            padding: '8px 16px', background: '#ec4899', color: '#fff',
+            border: 'none', borderRadius: 10, cursor: 'pointer'
+          }}>← 돌아가기</button>
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
-          {step === "idle" && (
-            <div>
-              <div style={{ background: "rgba(255,255,255,0.95)", borderRadius: 16, padding: 20, marginBottom: 20, textAlign: "center", boxShadow: "0 4px 20px rgba(244,114,182,0.15)" }}>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>🌸</div>
-                <h2 style={{ margin: "0 0 8px", fontSize: 18, color: "#be185d" }}>안녕하세요! 💙</h2>
-                <p style={{ margin: "0 0 4px", fontSize: 14, color: "#374151" }}>저는 <strong>{COUNSELOR_NAME}</strong> 선생님이에요</p>
-                <p style={{ margin: 0, fontSize: 13, color: "#9ca3af" }}>어떤 고민이든 편하게 이야기해요</p>
-              </div>
-              <p style={{ textAlign: "center", fontSize: 13, color: "#9ca3af", marginBottom: 12 }}>어떤 주제로 이야기할까요?</p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                {CATEGORIES.map(cat => (
-                  <button key={cat.id} onClick={() => handleCategoryClick(cat.label)}
-                    style={{ padding: "12px 8px", background: "rgba(255,255,255,0.9)", border: "1.5px solid #fce7f3", borderRadius: 12, cursor: "pointer", fontSize: 13, color: "#374151", textAlign: "center", fontWeight: 500, boxShadow: "0 2px 8px rgba(244,114,182,0.1)" }}>
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
+        {/* 통계 카드 */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 20 }}>
+          {[
+            { label: '전체 상담', value: total, color: '#ec4899' },
+            { label: '🔴 고위험', value: highRisk, color: '#ef4444' },
+            { label: '🟡 주의',   value: medRisk,  color: '#f59e0b' },
+          ].map(s => (
+            <div key={s.label} style={{
+              background: '#fff', borderRadius: 14, padding: 16,
+              textAlign: 'center', boxShadow: '0 2px 8px rgba(236,72,153,0.1)'
+            }}>
+              <div style={{ fontSize: 28, fontWeight: 'bold', color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: 13, color: '#888', marginTop: 4 }}>{s.label}</div>
             </div>
-          )}
+          ))}
+        </div>
 
+        {/* 인기 카테고리 */}
+        <div style={{
+          background: '#fff', borderRadius: 14, padding: 16,
+          marginBottom: 20, boxShadow: '0 2px 8px rgba(236,72,153,0.1)'
+        }}>
+          <h3 style={{ color: '#ec4899', marginTop: 0 }}>🏆 상위 상담 주제</h3>
+          {topCategories.map(c => (
+            <div key={c.id} style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ width: 100, fontSize: 13 }}>{c.emoji} {c.label}</span>
+              <div style={{
+                flex: 1, height: 12, background: '#fce7f3', borderRadius: 6, overflow: 'hidden', margin: '0 10px'
+              }}>
+                <div style={{
+                  height: '100%', background: '#ec4899', borderRadius: 6,
+                  width: `${total ? (c.count / total) * 100 : 0}%`
+                }} />
+              </div>
+              <span style={{ fontSize: 13, color: '#888', minWidth: 24 }}>{c.count}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* CSV 내보내기 */}
+        <button onClick={exportCSV} style={{
+          width: '100%', padding: 14, background: '#10b981', color: '#fff',
+          border: 'none', borderRadius: 12, fontSize: 15,
+          fontWeight: 'bold', cursor: 'pointer', marginBottom: 20
+        }}>📥 CSV 내보내기</button>
+
+        {/* 최근 로그 */}
+        <div style={{
+          background: '#fff', borderRadius: 14, padding: 16,
+          boxShadow: '0 2px 8px rgba(236,72,153,0.1)'
+        }}>
+          <h3 style={{ color: '#ec4899', marginTop: 0 }}>🕐 최근 상담 기록</h3>
+          {logs.length === 0 && <p style={{ color: '#aaa', textAlign: 'center' }}>아직 기록이 없어요</p>}
+          {[...logs].reverse().slice(0, 20).map((l, i) => {
+            const badge = getRiskBadge(l.risk);
+            return (
+              <div key={i} style={{
+                borderBottom: '1px solid #fce7f3', paddingBottom: 10, marginBottom: 10
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#aaa' }}>
+                  <span>{l.name} · {l.grade} · {getCategoryLabel(l.category)}</span>
+                  <span style={{ color: badge.color, fontWeight: 'bold' }}>{badge.text}</span>
+                </div>
+                <p style={{ margin: '4px 0 0', fontSize: 13, color: '#555' }}>{l.message}</p>
+                <span style={{ fontSize: 11, color: '#bbb' }}>{l.time}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================
+// 성별 선택 컴포넌트
+// =============================================
+function GenderSelect({ onSelect }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '12px 0' }}>
+      <p style={{ color: '#be185d', fontSize: 14, marginBottom: 12 }}>
+        선생님이 더 잘 이해할 수 있게 알려줄래? 😊
+      </p>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
+        {[
+          { v: 'female', label: '👧 여학생', bg: '#fce7f3', bc: '#ec4899' },
+          { v: 'male',   label: '👦 남학생', bg: '#eff6ff', bc: '#3b82f6' },
+          { v: 'none',   label: '🤫 비밀',   bg: '#f3f4f6', bc: '#9ca3af' },
+        ].map(b => (
+          <button key={b.v} onClick={() => onSelect(b.v)} style={{
+            padding: '8px 16px', background: b.bg, border: `2px solid ${b.bc}`,
+            borderRadius: 20, cursor: 'pointer', fontSize: 13, fontWeight: 'bold',
+            color: b.bc, transition: 'transform 0.1s'
+          }}
+            onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+          >{b.label}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// =============================================
+// 메인 컴포넌트
+// =============================================
+export default function WeClassAI() {
+  const [messages,        setMessages]        = useState([]);
+  const [input,           setInput]           = useState('');
+  const [grade,           setGrade]           = useState('');
+  const [logs,            setLogs]            = useState([]);
+  const [view,            setView]            = useState('chat');   // 'chat' | 'admin'
+  const [showAdminModal,  setShowAdminModal]  = useState(false);
+  const [loading,         setLoading]         = useState(false);
+  const [step,            setStep]            = useState('category'); // category | grade | name | gender | chat
+  const [studentName,     setStudentName]     = useState('');
+  const [studentGender,   setStudentGender]   = useState('');
+  const [turnCount,       setTurnCount]       = useState(0);
+  const [history,         setHistory]         = useState([]);
+  const [selectedCat,     setSelectedCat]     = useState(null);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
+
+  const addMsg = useCallback((role, text, extra = {}) => {
+    setMessages(prev => [...prev, { role, text, ...extra }]);
+  }, []);
+
+  const updateLastBot = useCallback((text) => {
+    setMessages(prev => {
+      const next = [...prev];
+      for (let i = next.length - 1; i >= 0; i--) {
+        if (next[i].role === 'bot') { next[i] = { ...next[i], text }; break; }
+      }
+      return next;
+    });
+  }, []);
+
+  // 카테고리 선택
+  const handleCategoryClick = useCallback((cat) => {
+    setSelectedCat(cat);
+    setMessages([]);
+    setHistory([]);
+    setTurnCount(0);
+    addMsg('bot', `${cat.emoji} **${cat.label}** 주제를 선택했구나!\n먼저 선생님한테 몇 학년인지 알려줄 수 있어? 😊`);
+    setStep('grade');
+  }, [addMsg]);
+
+  // 학년 선택
+  const handleGradeClick = useCallback((g) => {
+    setGrade(g);
+    addMsg('user', g);
+    addMsg('bot', `${g}이구나! 이름은 뭐야? 편하게 불러줄게 🌸`);
+    setStep('name');
+  }, [addMsg]);
+
+  // 성별 선택
+  const handleGender = useCallback((g) => {
+    setStudentGender(g);
+    const gText = g === 'female' ? '여학생' : g === 'male' ? '남학생' : '';
+    addMsg('bot', `${gText ? gText + '이구나! ' : ''}${studentName}아, 반가워 💕\n어떤 일이 있었는지 선생님한테 편하게 말해줘. 여기서 하는 이야기는 비밀이야 🔒`);
+    setStep('chat');
+  }, [addMsg, studentName]);
+
+  // 메시지 전송
+  const sendMessage = useCallback(async () => {
+    const txt = input.trim();
+    if (!txt || loading) return;
+    setInput('');
+
+    // 이름 입력 단계
+    if (step === 'name') {
+      const parsed = parseName(txt);
+      const name   = parsed || txt.slice(0, 6);
+      setStudentName(name);
+      addMsg('user', txt);
+      addMsg('bot', `${name}아 안녕! 반가워 😊\n선생님이 더 잘 이해할 수 있게 알려줄래?`, { showGender: true });
+      setStep('gender');
+      return;
+    }
+
+    if (step !== 'chat') return;
+
+    addMsg('user', txt);
+    setLoading(true);
+    addMsg('bot', '...');
+
+    const risk     = getRisk(txt);
+    const category = getCategory(txt) !== 'etc' ? getCategory(txt) : (selectedCat?.id || 'etc');
+    const newTurn  = turnCount + 1;
+    setTurnCount(newTurn);
+
+    // 로그 저장
+    setLogs(prev => [...prev, {
+      name: studentName, grade, gender: studentGender,
+      category, risk, message: txt,
+      time: new Date().toLocaleString('ko-KR')
+    }]);
+
+    let reply;
+
+    // 위기 대응
+    if (risk === 'high' || risk === 'medium') {
+      reply = getCrisisReply(studentName, risk);
+    } else {
+      // AI 호출 — 전체 히스토리 전달
+      const newHistory = [...history, { role: 'user', content: txt }];
+      reply = await callAI(txt, studentName, studentGender, grade, newTurn, history);
+      if (!reply) reply = getFallback(studentName, newTurn);
+      // 히스토리 업데이트
+      setHistory([...newHistory, { role: 'assistant', content: reply }]);
+    }
+
+    updateLastBot(reply);
+    setLoading(false);
+  }, [input, loading, step, studentName, studentGender, grade, turnCount, history, selectedCat, addMsg, updateLastBot]);
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }, [sendMessage]);
+
+  // =============================================
+  // 렌더링
+  // =============================================
+  if (view === 'admin') {
+    return <AdminDashboard logs={logs} onClose={() => setView('chat')} />;
+  }
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #fff0f6 0%, #fce7f3 50%, #fff5f9 100%)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      fontFamily: "'Noto Sans KR', sans-serif"
+    }}>
+
+      {/* 헤더 */}
+      <div style={{
+        width: '100%', maxWidth: 480,
+        background: 'linear-gradient(90deg, #ec4899, #f472b6)',
+        padding: '16px 20px', borderRadius: '0 0 24px 24px',
+        boxShadow: '0 4px 20px rgba(236,72,153,0.3)',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+      }}>
+        <div>
+          <div style={{ color: '#fff', fontSize: 11, opacity: 0.85 }}>🏫 {SCHOOL_NAME}</div>
+          <div style={{ color: '#fff', fontWeight: 'bold', fontSize: 17 }}>💗 위클래스 AI 상담</div>
+          <div style={{ color: '#fce7f3', fontSize: 12 }}>{COUNSELOR_NAME}</div>
+        </div>
+        <button onClick={() => setShowAdminModal(true)} style={{
+          background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
+          color: '#fff', borderRadius: 10, padding: '6px 12px', fontSize: 12, cursor: 'pointer'
+        }}>관리자</button>
+      </div>
+
+      {/* 카테고리 선택 화면 */}
+      {step === 'category' && (
+        <div style={{ width: '100%', maxWidth: 480, padding: 20 }}>
+          <div style={{
+            background: '#fff', borderRadius: 20, padding: 20,
+            boxShadow: '0 4px 20px rgba(236,72,153,0.1)', marginBottom: 16
+          }}>
+            <p style={{ color: '#be185d', fontSize: 15, textAlign: 'center', marginBottom: 4, fontWeight: 'bold' }}>
+              안녕! 선생님이 여기 있어 😊
+            </p>
+            <p style={{ color: '#9ca3af', fontSize: 13, textAlign: 'center', margin: 0 }}>
+              어떤 이야기를 하고 싶어? 하나를 골라봐!
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            {CATEGORIES.map(cat => (
+              <button key={cat.id} onClick={() => handleCategoryClick(cat)} style={{
+                background: '#fff', border: '2px solid #fce7f3',
+                borderRadius: 14, padding: '10px 4px', cursor: 'pointer',
+                textAlign: 'center', fontSize: 11, color: '#be185d', fontWeight: 'bold',
+                transition: 'all 0.15s', boxShadow: '0 2px 6px rgba(236,72,153,0.08)'
+              }}
+                onMouseOver={e => { e.currentTarget.style.borderColor = '#ec4899'; e.currentTarget.style.background = '#fff0f6'; }}
+                onMouseOut={e => { e.currentTarget.style.borderColor = '#fce7f3'; e.currentTarget.style.background = '#fff'; }}
+              >
+                <div style={{ fontSize: 20, marginBottom: 4 }}>{cat.emoji}</div>
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 학년 선택 */}
+      {step === 'grade' && (
+        <div style={{ width: '100%', maxWidth: 480, padding: '12px 20px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+            {GRADES.map(g => (
+              <button key={g} onClick={() => handleGradeClick(g)} style={{
+                padding: '8px 18px', background: '#fff', border: '2px solid #fce7f3',
+                borderRadius: 20, cursor: 'pointer', fontSize: 14, color: '#be185d', fontWeight: 'bold'
+              }}>{g}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 채팅 메시지 영역 */}
+      {(step === 'name' || step === 'gender' || step === 'chat') && (
+        <div style={{
+          width: '100%', maxWidth: 480, flex: 1,
+          padding: '12px 16px', overflowY: 'auto',
+          display: 'flex', flexDirection: 'column', gap: 10
+        }}>
           {messages.map((msg, i) => (
-            <div key={i} style={{ marginBottom: 12 }}>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 6 }}>
-                <div style={{ maxWidth: "75%", padding: "10px 14px", background: "linear-gradient(135deg, #f472b6, #ec4899)", color: "#fff", borderRadius: "18px 18px 4px 18px", fontSize: 14, lineHeight: 1.5, whiteSpace: "pre-wrap", boxShadow: "0 2px 8px rgba(244,114,182,0.3)" }}>
-                  {msg.user}
+            <div key={i}>
+              <div style={{
+                display: 'flex',
+                justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                alignItems: 'flex-end', gap: 8
+              }}>
+                {msg.role === 'bot' && (
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #ec4899, #f472b6)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 16, flexShrink: 0
+                  }}>💗</div>
+                )}
+                <div style={{
+                  maxWidth: '72%', padding: '10px 14px', borderRadius:
+                    msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                  background: msg.role === 'user'
+                    ? 'linear-gradient(135deg, #ec4899, #f472b6)'
+                    : '#fff',
+                  color: msg.role === 'user' ? '#fff' : '#374151',
+                  fontSize: 14, lineHeight: 1.6,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                  whiteSpace: 'pre-wrap', wordBreak: 'break-word'
+                }}>
+                  {msg.text === '...'
+                    ? <span style={{ letterSpacing: 4, color: '#f9a8d4' }}>●●●</span>
+                    : msg.text}
                 </div>
               </div>
-              {msg.genderSelect && step === "asked_gender" && (
-                <div style={{ background: "rgba(255,255,255,0.95)", borderRadius: 16, padding: 16, marginBottom: 6, boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
-                  <GenderSelect name={msg.genderName || studentName} onSelect={handleGender} />
-                </div>
-              )}
-              {msg.bot !== null && (
-                <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                  <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: "#fce7f3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>👩‍🏫</div>
-                  <div style={{ maxWidth: "78%", padding: "12px 14px", background: msg.isAlert ? "#fef2f2" : "rgba(255,255,255,0.97)", border: msg.isAlert ? "2px solid #fca5a5" : "1px solid #fce7f3", borderRadius: "4px 18px 18px 18px", fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap", color: "#374151", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
-                    {msg.bot}
-                  </div>
+              {/* 성별 선택 버튼 */}
+              {msg.showGender && step === 'gender' && (
+                <div style={{ marginLeft: 44, marginTop: 8 }}>
+                  <GenderSelect onSelect={handleGender} />
                 </div>
               )}
             </div>
           ))}
-
-          {loading && (
-            <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 12 }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#fce7f3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>👩‍🏫</div>
-              <div style={{ padding: "12px 16px", background: "rgba(255,255,255,0.97)", border: "1px solid #fce7f3", borderRadius: "4px 18px 18px 18px", boxShadow: "0 2px 12px rgba(0,0,0,0.08)" }}>
-                <div style={{ display: "flex", gap: 4 }}>
-                  {[0, 1, 2].map(i => (
-                    <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#f9a8d4", animation: "bounce 1s infinite", animationDelay: `${i * 0.2}s` }} />
-                  ))}
-                </div>
-                <style>{`@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }`}</style>
-              </div>
-            </div>
-          )}
-          <div ref={chatEndRef} />
+          <div ref={bottomRef} />
         </div>
+      )}
 
-        {step !== "idle" && step !== "asked_gender" && (
-          <div style={{ background: "rgba(255,255,255,0.97)", borderTop: "1px solid #fce7f3", padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-end", position: "sticky", bottom: 0 }}>
-            <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
-              placeholder={step === "asked_name" ? "이름을 알려주세요 😊" : "선생님한테 편하게 이야기해줘 💙"}
-              disabled={loading} rows={1}
-              style={{ flex: 1, padding: "10px 14px", border: "1.5px solid #fce7f3", borderRadius: 20, fontSize: 14, resize: "none", outline: "none", background: loading ? "#f9fafb" : "#fff", lineHeight: 1.4, maxHeight: 100, overflow: "auto" }} />
-            <button onClick={sendMessage} disabled={loading || !input.trim()}
-              style={{ width: 44, height: 44, borderRadius: "50%", background: loading || !input.trim() ? "#f3f4f6" : "linear-gradient(135deg, #f472b6, #ec4899)", border: "none", cursor: loading || !input.trim() ? "not-allowed" : "pointer", fontSize: 18, color: loading || !input.trim() ? "#9ca3af" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              💬
-            </button>
-          </div>
-        )}
-
-        <div style={{ textAlign: "center", padding: "8px", fontSize: 11, color: "#9ca3af", background: "rgba(255,255,255,0.8)" }}>
-          긴급상담: 청소년전화 <strong>1388</strong> · 자살예방 <strong>1393</strong>
+      {/* 입력창 */}
+      {step === 'chat' && (
+        <div style={{
+          width: '100%', maxWidth: 480,
+          padding: '12px 16px',
+          background: 'rgba(255,255,255,0.9)',
+          borderTop: '1px solid #fce7f3',
+          display: 'flex', gap: 8, alignItems: 'flex-end'
+        }}>
+          <textarea
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="선생님한테 편하게 말해줘 😊"
+            rows={1}
+            style={{
+              flex: 1, padding: '10px 14px',
+              border: '2px solid #fce7f3', borderRadius: 20,
+              fontSize: 14, outline: 'none', resize: 'none',
+              fontFamily: 'inherit', lineHeight: 1.5,
+              background: '#fff'
+            }}
+            onFocus={e => e.target.style.borderColor = '#ec4899'}
+            onBlur={e => e.target.style.borderColor = '#fce7f3'}
+          />
+          <button onClick={sendMessage} disabled={loading || !input.trim()} style={{
+            width: 44, height: 44,
+            background: loading || !input.trim()
+              ? '#fce7f3'
+              : 'linear-gradient(135deg, #ec4899, #f472b6)',
+            border: 'none', borderRadius: '50%', cursor:
+              loading || !input.trim() ? 'not-allowed' : 'pointer',
+            fontSize: 18, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', flexShrink: 0,
+            boxShadow: '0 2px 8px rgba(236,72,153,0.3)'
+          }}>
+            {loading ? '⏳' : '➤'}
+          </button>
         </div>
+      )}
+
+      {/* 이름 입력 단계 입력창 */}
+      {step === 'name' && (
+        <div style={{
+          width: '100%', maxWidth: 480,
+          padding: '12px 16px',
+          background: 'rgba(255,255,255,0.9)',
+          borderTop: '1px solid #fce7f3',
+          display: 'flex', gap: 8
+        }}>
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="이름을 입력해줘 😊"
+            style={{
+              flex: 1, padding: '10px 14px',
+              border: '2px solid #fce7f3', borderRadius: 20,
+              fontSize: 14, outline: 'none'
+            }}
+          />
+          <button onClick={sendMessage} style={{
+            width: 44, height: 44,
+            background: 'linear-gradient(135deg, #ec4899, #f472b6)',
+            border: 'none', borderRadius: '50%', cursor: 'pointer',
+            fontSize: 18, color: '#fff'
+          }}>➤</button>
+        </div>
+      )}
+
+      {/* 하단 긴급상담 안내 */}
+      <div style={{
+        width: '100%', maxWidth: 480,
+        padding: '10px 16px',
+        textAlign: 'center', fontSize: 12, color: '#9ca3af'
+      }}>
+        💙 위기상담 필요 시 ☎️ <strong style={{ color: '#ec4899' }}>1388</strong> (24시간)
       </div>
+
+      {/* 관리자 모달 */}
+      {showAdminModal && (
+        <AdminModal
+          onClose={() => setShowAdminModal(false)}
+          onSuccess={() => { setShowAdminModal(false); setView('admin'); }}
+        />
+      )}
     </div>
   );
 }

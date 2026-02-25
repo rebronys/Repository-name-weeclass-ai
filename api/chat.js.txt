@@ -30,22 +30,28 @@ export default async function handler(req, res) {
       contents.push({ role: 'user', parts: [{ text: '안녕' }] });
     }
 
+    // 마지막이 model로 끝나면 제거 (Gemini 규칙)
+    while (contents.length > 0 && contents[contents.length - 1].role === 'model') {
+      contents.pop();
+    }
+
     const requestBody = {
       contents,
       generationConfig: {
-        temperature: 0.85,
-        maxOutputTokens: 400,
+        temperature: 0.88,
+        maxOutputTokens: 500,
         topP: 0.95,
-      }
+        topK: 40
+      },
+      ...(systemMsg && {
+        system_instruction: {
+          parts: [{ text: systemMsg.content }]
+        }
+      })
     };
 
-    if (systemMsg) {
-      requestBody.system_instruction = {
-        parts: [{ text: systemMsg.content }]
-      };
-    }
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -53,7 +59,7 @@ export default async function handler(req, res) {
     });
 
     const responseText = await response.text();
-    console.log('Gemini 상태:', response.status);
+    console.log('Gemini 응답 상태:', response.status);
 
     if (!response.ok) {
       console.error('Gemini 오류:', responseText);
